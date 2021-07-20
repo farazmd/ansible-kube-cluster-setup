@@ -1,0 +1,34 @@
+- hosts: all
+  become: yes
+  user: "{{ansible_user}}"
+
+  pre_tasks:
+    - name: Update cache on CentOS
+      when: ansible_distribution == "CentOS"
+      changed_when: false
+      yum:
+        update_cache: yes
+
+    - name: Update cache on Debian
+      when: ansible_distribution == "Debian"
+      changed_when: false
+      apt:
+        update_cache: yes
+  
+- hosts: all
+  become: yes
+  user: "{{ansible_user}}"
+  roles:
+    - base
+
+- hosts: master
+  become: true
+  user: "{{ansible_user}}"
+  roles:
+    - master
+  
+- hosts: workers
+  become: true
+  user: "{{ansible_user}}"
+  roles:
+    - worker
