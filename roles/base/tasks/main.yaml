@@ -1,3 +1,94 @@
+- name: Load br_netfilter modules
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Load overlay modules
+  community.general.modprobe:
+    name: overlay
+    state: present
+
+- name: Enable IP forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    state: present
+    value: 1
+    sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
+    sysctl_set: yes
+
+- name: Enable IPv4 table routing
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    state: present
+    value: 1
+    sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
+    sysctl_set: yes
+
+- name: Enable IPv6 table routing
+  sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    state: present
+    value: 1
+    sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
+    sysctl_set: yes
+
 - name: "Install Containerd"
   package:
     name: containerd
+    state: present
+    enabled: yes
+
+- name: "Create containerd config directory"
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755'
+
+- name: "Configure Containerd"
+  ansible.builtin.shell:
+    cmd:  containerd config default | sudo tee /etc/containerd/config.toml
+
+- name: "Restart Containerd"
+  ansible.builtin.service:
+    name: containerd
+    state: restarted
+    enabled: yes
+
+# Install K8s
+
+- name: "Install packages"
+  package:
+    name: "{{ package_name }}"
+    state: present
+  vars:
+    package_name:
+      - apt-transport-https
+      - curl
+      - ca-certificates
+
+- name: "Add GPG key"
+  ansible.builtin.apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+  when: ansible_distribution == "Debian"
+
+- name: "Added K8s repo"
+  ansible.builtin.apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+  when: ansible_distribution == "Debian"
+
+- name: Update Cache
+  apt:
+    update_cache: yes
+  when: ansible_distribution == "Debian"
+  
+- name: "Install k8 packages"
+  package:
+    name: "{{ pkgs }}"
+    state: present
+  vars:
+    pkgs:
+      - kubeadm={{ KUBE_VERSION }}
+      - kubectl={{ KUBE_VERSION }}
+      - kubelet={{ KUBE_VERSION }}
