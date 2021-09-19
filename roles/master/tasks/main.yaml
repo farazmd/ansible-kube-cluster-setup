@@ -1,1 +1,2 @@
-- name: "Join master node"
+- name: "Initialise cluster"
+  command: kubeadm init --advertise-address {{ hostvars[groups.master[0]]['ansible_default_ipv4']['address'] }} --pod-network-address {{ pod_network }}
