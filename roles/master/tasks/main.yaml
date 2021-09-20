@@ -1,2 +1,7 @@
 - name: "Initialise cluster"
-  command: kubeadm init --advertise-address {{ hostvars[groups.master[0]]['ansible_default_ipv4']['address'] }} --pod-network-address {{ pod_network }}
+  command: kubeadm init --apiserver-advertise-address {{ hostvars[groups.master[0]]['ansible_default_ipv4']['address'] }} --pod-network-cidr {{ pod_network }} --skip-token-print --token {{ kube_token }}
+
+- name: "Install network add-on"
+  command: -| 
+    curl https://docs.projectcalico.org/manifests/tigera-operator.yaml | kubectl apply -f - && \
+    curl https://docs.projectcalico.org/manifests/custom-resources.yaml | sed -e s'@192\.168\.0\.0/16@{{ pod_network }}@'| kubectl apply -f - 
