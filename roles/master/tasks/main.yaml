@@ -1,5 +1,14 @@
 - name: "Initialise cluster"
-  command: kubeadm init --apiserver-advertise-address {{ hostvars[groups.master[0]]['ansible_default_ipv4']['address'] }} --pod-network-cidr {{ pod_network }} --skip-token-print --token {{ kube_token }}
+  command: kubeadm init --apiserver-advertise-address {{ hostvars[groups.master[0]]['ansible_default_ipv4']['address'] }} --pod-network-cidr {{ pod_network }} --skip-token-print --token {{ kube_token }} 
+
+- name: "CA hash"
+  command: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+  register: K8S_MASTER_CA_HASH
+
+- name: "Add K8S Hash to dummy host"
+  add_host:
+    name:   "K8S_TOKEN_HOLDER"
+    hash:   "{{ K8S_MASTER_CA_HASH.stdout }}"
 
 - name: "Install network add-on"
   command: -| 

@@ -1,1 +1,4 @@
 - name: "Join cluster"
+  command: |
+    kubeadm join --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }}
+    --discovery-token-ca-cert-hash sha256:{{ hostvars['K8S_TOKEN_HOLDER']['hash'] }} {{ hostvars[groups.master[0]]['ansible_default_ipv4']['address'] }}:6443
