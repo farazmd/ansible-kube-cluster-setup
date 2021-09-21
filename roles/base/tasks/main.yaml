@@ -89,6 +89,17 @@
     state: present
   vars:
     pkgs:
-      - kubeadm={{ KUBE_VERSION }}
-      - kubectl={{ KUBE_VERSION }}
-      - kubelet={{ KUBE_VERSION }}
+      - kubeadm="{{ KUBE_VERSION }}"
+      - kubectl="{{ KUBE_VERSION }}"
+      - kubelet="{{ KUBE_VERSION }}"
+      
+- name: Hold kubeadm
+  dpkg_selections:
+    name: "{{ pkgs }}"
+    selection: hold
+  vars:
+    pkgs:
+      - kubeadm
+      - kubectl
+      - kubelet
+  when: ansible_distribution == "Debian"
